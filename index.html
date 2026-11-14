@@ -31,6 +31,8 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;line-height:1.05;ma
 .bar form input{flex:1 1 auto;width:0}
 .bar form select{flex:0 1 38%;max-width:180px}
 .bar button.btn{flex:none}
+.bar form.withname{flex-wrap:wrap}
+.bar form #newname{flex:1 1 100%;width:auto}
 .barrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-variant-numeric:tabular-nums}
 .count{font-family:var(--display);font-size:22px;font-weight:700;color:var(--navy)}
 .status{font-size:12px;color:var(--muted)}
@@ -68,7 +70,7 @@ button.ghost{background:none;color:var(--muted);border-color:var(--line);font-we
 <script>
 (function(){
   var STORE={owner:"TXRopePusher",repo:"botb-checklist-data",path:"checklist.json",branch:"main"};
-  var TOKEN=(function(){var k="b81b52d12aff052eca1fe72b99f341b5",b=atob("BVFFCkBQO0FTFTlXAXR9LjUkBj9Vf0cFYAszS0F5GFhRZ2RReUUKYn4iUAt2fQIsW1VVJQ5HdCVICSdCcGkxRBNWQjdzRjVdWQcxIQlyYFAlM3IqImdjOFxgIwcM"),s="";for(var i=0;i<b.length;i++)s+=String.fromCharCode(b.charCodeAt(i)^k.charCodeAt(i%k.length));return s;})();
+  var TOKEN=(function(){var k="9167ad5516163300ffdb67da846993a8",b=atob("XlhCXxQGakVQQm4HAnJ/ezAjUzsGfxEGYQZjQUx7G1UKbmMELRNbZn11B1t1ewB5XlIAIV1HIiZJBHdIfWsySUhfRWInEGRZWlBmcQp0YgUgNCcucWc1O11tcw0B"),s="";for(var i=0;i<b.length;i++)s+=String.fromCharCode(b.charCodeAt(i)^k.charCodeAt(i%k.length));return s;})();
   var API="https://api.github.com/repos/"+STORE.owner+"/"+STORE.repo+"/contents/"+STORE.path;
   function H(x){var h={"Authorization":"Bearer "+TOKEN,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"};for(var k in x)h[k]=x[k];return h;}
   function enc(o){return btoa(unescape(encodeURIComponent(JSON.stringify(o,null,1))));}
@@ -95,7 +97,7 @@ button.ghost{background:none;color:var(--muted);border-color:var(--line);font-we
 
   function render(){
     var st=view(); if(!st)return;
-    var active=document.activeElement, draft=document.getElementById("newtxt"), draftVal=draft?draft.value:"", grpVal=(document.getElementById("newgrp")||{}).value, hadFocus=active&&active.id==="newtxt";
+    var active=document.activeElement, draft=document.getElementById("newtxt"), draftVal=draft?draft.value:"", grpVal=(document.getElementById("newgrp")||{}).value, nameEl=document.getElementById("newname"), nameVal=nameEl?nameEl.value:"", focusId=active&&active.id;
     var done=st.items.filter(function(i){return i.d;}).length,total=st.items.length,pct=total?Math.round(done/total*100):0;
     var h='<header><h1>BOTB Packing List</h1><p class="sub">Saturday, Nov. 14, Selah Ridge</p></header>';
     h+='<div class="bar"><div class="barrow"><span class="count">'+done+' of '+total+' packed</span><span id="status" class="status'+(status.bad?' bad':'')+'">'+esc(status.text)+'</span></div><div class="track"><div class="fill" style="width:'+pct+'%"></div></div>@@FORM@@</div>';
@@ -108,22 +110,27 @@ button.ghost{background:none;color:var(--muted);border-color:var(--line);font-we
       var pd=mine.filter(function(i){return i.d;}).length;
       h+='<div class="who"><h2>'+esc(p)+'<span>'+pd+'/'+mine.length+'</span></h2>';
       if(p!=="Blake"){h+=list(mine)+"</div>";opts.push({v:p+"|",l:p});return;}
+      opts.push({v:"Blake|Added",l:"Blake"});
       var groups=(st.groups||[]).slice(); mine.forEach(function(i){if(groups.indexOf(i.g)<0)groups.push(i.g);});
       groups.forEach(function(g){
-        opts.push({v:"Blake|"+g,l:"Blake: "+g});
         var items=mine.filter(function(i){return i.g===g;}); if(!items.length)return;
         var gd=items.filter(function(i){return i.d;}).length;
         h+='<section><h3>'+esc(g)+'<span>'+gd+'/'+items.length+'</span></h3>'+list(items)+'</section>';
       });
       h+="</div>";
     });
-    var f='<form id="add"><input id="newtxt" placeholder="Add an item" aria-label="New item" autocomplete="off"><select id="newgrp" aria-label="Whose list">';
+    opts.push({v:"__new",l:"Someone new…"});
+    var isNew=grpVal==="__new";
+    var f='<form id="add" class="'+(isNew?"withname":"")+'"><input id="newtxt" placeholder="Add an item" aria-label="New item" autocomplete="off"><select id="newgrp" aria-label="Whose list">';
     opts.forEach(function(o){f+='<option value="'+esc(o.v)+'">'+esc(o.l)+'</option>';});
-    f+='</select><button class="btn" type="submit">Add</button></form>';
+    f+='</select><button class="btn" type="submit">Add</button>'+(isNew?'<input id="newname" placeholder="Their name" aria-label="Their name" autocomplete="off">':'')+'</form>';
     h=h.replace("@@FORM@@",f);
     h+='<div class="foot">'+(confirming?'<span class="confirm">Uncheck all '+total+' items for everyone?</span><button class="btn" id="reset-yes" type="button">Uncheck all</button><button class="btn ghost" id="reset-no" type="button">Cancel</button>':'<button class="btn ghost" id="reset" type="button">Uncheck everything</button>')+'</div>';
     var y=window.scrollY; root.innerHTML=h; window.scrollTo(0,y);
-    var nd=document.getElementById("newtxt"); nd.value=draftVal; if(grpVal)document.getElementById("newgrp").value=grpVal; if(hadFocus)nd.focus();
+    var nd=document.getElementById("newtxt"); nd.value=draftVal;
+    var sel=document.getElementById("newgrp"); if(grpVal&&[].some.call(sel.options,function(o){return o.value===grpVal;}))sel.value=grpVal;
+    var nn=document.getElementById("newname"); if(nn)nn.value=nameVal;
+    if(focusId==="newtxt"||focusId==="newname"){var fe=document.getElementById(focusId);if(fe)fe.focus();}
   }
 
   function load(){
@@ -155,7 +162,7 @@ button.ghost{background:none;color:var(--muted);border-color:var(--line);font-we
   }
   function queue(op){pending.push(op);render();clearTimeout(timer);timer=setTimeout(flush,500);}
 
-  root.addEventListener("change",function(e){var id=e.target.getAttribute&&e.target.getAttribute("data-id");if(id)queue({k:"t",id:id,d:e.target.checked});});
+  root.addEventListener("change",function(e){if(e.target.id==="newgrp"){render();if(e.target.value==="__new"){var n=document.getElementById("newname");if(n)n.focus();}return;}var id=e.target.getAttribute&&e.target.getAttribute("data-id");if(id)queue({k:"t",id:id,d:e.target.checked});});
   root.addEventListener("click",function(e){
     var t=e.target, rm=t.getAttribute&&t.getAttribute("data-rm");
     if(rm){queue({k:"r",id:rm});return;}
@@ -166,7 +173,17 @@ button.ghost{background:none;color:var(--muted);border-color:var(--line);font-we
   root.addEventListener("submit",function(e){
     e.preventDefault();
     var inp=document.getElementById("newtxt"),txt=inp.value.trim(); if(!txt)return;
-    var v=document.getElementById("newgrp").value.split("|"), it={id:"n"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),t:txt,d:false};
+    var sv=document.getElementById("newgrp").value, it={id:"n"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),t:txt,d:false};
+    if(sv==="__new"){
+      var ne=document.getElementById("newname"), nm=ne?ne.value.trim():"";
+      if(!nm){if(ne){ne.focus();ne.placeholder="Type their name first";}return;}
+      nm=nm.charAt(0).toUpperCase()+nm.slice(1);
+      if(nm.toLowerCase()==="blake")it.g="Added"; else it.p=nm;
+      inp.value=""; queue({k:"a",item:it});
+      document.getElementById("newgrp").value=nm.toLowerCase()==="blake"?"Blake|Added":nm+"|"; render();
+      return;
+    }
+    var v=sv.split("|");
     if(v[0]==="Blake")it.g=v[1]; else it.p=v[0];
     inp.value=""; queue({k:"a",item:it});
   });
